@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Character Face Matching</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Anime Character Face Matching</h1>
+
+        <!-- Hiển thị thông báo lỗi -->
+        {% if error_message %}
+            <p style="color: red; text-align: center;">{{ error_message }}</p>
+        {% endif %}
+
+        <!-- Form upload và tìm kiếm -->
+        <form method="post" enctype="multipart/form-data">
+            <div class="upload-section">
+                <input type="file" name="file" accept="image/*" required>
+                <button type="submit">Search</button>
+            </div>
+        </form>
+
+        <!-- Nút reset -->
+        <form method="post">
+            <button type="submit" name="reset">Clear</button>
+        </form>
+
+        <!-- Hiển thị ảnh upload -->
+        {% if uploaded_image %}
+            <h3>Uploaded Image:</h3>
+            <img src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" alt="Uploaded Image" class="uploaded-img">
+        {% endif %}
+
+        <!-- Hiển thị kết quả -->
+        {% if results %}
+            <h3>Similar Characters:</h3>
+            <div class="results">
+                {% for result in results %}
+                    <div class="result-item">
+                        <img src="{{ url_for('static', filename=result.path) }}" alt="Result Image" class="result-img">
+                        <p>{{ result.character }} (Similarity: {{ "%.2f" % (result.score * 100) }}%)</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
