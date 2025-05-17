@@ -5,6 +5,7 @@ import numpy as np
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.applications.vgg16 import preprocess_input
 from sklearn.metrics.pairwise import cosine_similarity
+import psycopg2
 
 # Load model VGG16
 model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3), pooling='avg')
@@ -89,3 +90,37 @@ def find_similar_images(query_features):
         })
 
     return results
+
+
+def find_similar_images_sql(query_features, top_k=3):
+    conn = psycopg2.connect(
+        host=os.getenv('DB_HOST'),
+        dbname=os.getenv('DB_NAME'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASS')
+    )
+    with conn.cursor() as cur:
+        # Chuyển vector numpy sang chuỗi cho truy vấn pgvector
+        vector_str = '[' + ','.join(str(float(x)) for x in query_features) + ']'
+        cur.execute('''
+            SELECT i.image_path, i.name, f.feature_vector <=> %s::vector AS distance
+            FROM image_features f
+            JOIN images i ON f.image_id = i.id
+            WHERE f.model_name = 'VGG16'
+            ORDER BY distance ASC
+            LIMIT %s;
+        ''', (vector_str, top_k))
+        results = cur.fetchall()
+    conn.close()
+    # Trả về danh sách dict giống hệt find_similar_images
+    formatted_results = []
+    for row in results:
+        img_path = row[0].replace('\\', '/').replace('static/', '')
+        character_name = row[1]
+        display_path = img_path  # đã loại static/ ở trên
+        formatted_results.append({
+            'path': display_path,
+            'character': character_name,
+            'score': float(1-row[2])
+        })
+    return formatted_results

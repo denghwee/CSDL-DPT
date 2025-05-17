@@ -1,17 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import os
 from werkzeug.utils import secure_filename
-from model import extract_features, find_similar_images
+from model import extract_features, find_similar_images, find_similar_images_sql
+import secrets
 
 app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
 
 # Cấu hình thư mục upload
 UPLOAD_FOLDER = 'static/uploads/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-
-# Cấu hình session
-app.secret_key = 'your_secret_key_here'  # Cần thiết để sử dụng flash messages và session
 
 # Kiểm tra định dạng file
 def allowed_file(filename):
@@ -41,7 +40,7 @@ def index():
                 features = extract_features(file_path)
                 if features is not None:
                     print("Features extracted successfully")  # Log
-                    similar_images = find_similar_images(features)
+                    similar_images = find_similar_images_sql(features)
                     results = similar_images[:3]  # Lấy 3 ảnh tương tự nhất
                     print(f"Found similar images: {results}")  # Log
                 else:
